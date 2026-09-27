@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brute-Force Detection Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+  <header>
+    <h1>🛡️ Brute-Force Login Detection Dashboard</h1>
+    <div class="header-actions">
+      <a href="{{ url_for('login') }}">← Back to Login</a>
+      <button id="unblockBtn">Unblock All</button>
+    </div>
+  </header>
+
+  <section class="config" id="config"></section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>🚨 Alerts</h2>
+      <div id="alerts" class="scroll-box"></div>
+    </section>
+
+    <section class="panel">
+      <h2>⛔ Currently Blocked</h2>
+      <div id="blocked" class="scroll-box"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>📜 Recent Login Attempts</h2>
+    <table id="historyTable">
+      <thead>
+        <tr><th>Time</th><th>IP</th><th>Username</th><th>Result</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <script>
+    async function refresh() {
+      const res = await fetch('/api/dashboard-data');
+      const data = await res.json();
+
+      // Config
+      document.getElementById('config').innerHTML =
+        `Threshold: <strong>${data.config.failed_attempt_threshold}</strong> failed attempts in
+         <strong>${data.config.window_seconds}s</strong> → block for
+         <strong>${data.config.block_seconds}s</strong>`;
+
+      // Alerts
+      const alertsBox = document.getElementById('alerts');
+      alertsBox.innerHTML = data.alerts.length
+        ? data.alerts.map(a => `
+            <div class="alert-item">
+              <strong>${a.timestamp}</strong><br>
+              IP: ${a.ip} | User: ${a.username}<br>
+              <span class="reason">${a.reason}</span>
+            </div>`).join('')
+        : '<p class="empty">No alerts yet.</p>';
+
+      // Blocked
+      const blockedBox = document.getElementById('blocked');
+      const blockedItems = [
+        ...data.blocked_ips.map(b => `IP ${b.ip} — unblocks in ${b.unblocks_in}s`),
+        ...data.blocked_users.map(b => `User '${b.username}' — unblocks in ${b.unblocks_in}s`)
+      ];
+      blockedBox.innerHTML = blockedItems.length
+        ? blockedItems.map(t => `<div class="blocked-item">${t}</div>`).join('')
+        : '<p class="empty">Nothing currently blocked.</p>';
+
+      // History table
+      const tbody = document.querySelector('#historyTable tbody');
+      tbody.innerHTML = data.history.map(h => `
+        <tr class="row-${h.result}">
+          <td>${h.timestamp}</td>
+          <td>${h.ip}</td>
+          <td>${h.username}</td>
+          <td>${h.result}</td>
+        </tr>`).join('');
+    }
+
+    document.getElementById('unblockBtn').addEventListener('click', async () => {
+      await fetch('/api/unblock-all', { method: 'POST' });
+      refresh();
+    });
+
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>
