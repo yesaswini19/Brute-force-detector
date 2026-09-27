@@ -1,7 +1,6 @@
 # Brute-Force Login Detection System
 
- 🔗 **Live Demo:** https://brute-force-detector-git-main-yesaswini19s-projects.vercel.app/  
-(Dashboard: https://brute-force-detector-git-main-yesaswini19s-projects.vercel.app/dashboard)
+ 🔗 **Live Demo:** https://brute-force-detector-theta.vercel.app/
 
 A simple, self-contained Flask project that demonstrates how to detect and
 block brute-force login attempts in real time.
